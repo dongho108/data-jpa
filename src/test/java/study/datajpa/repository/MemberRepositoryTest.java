@@ -4,10 +4,17 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
+import study.datajpa.entity.Team;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +28,9 @@ class MemberRepositoryTest {
 
     @Autowired
     MemberRepository memberRepository;
+
+    @Autowired
+    TeamRepository teamRepository;
 
     @Test
     public void testMember() throws Exception {
@@ -70,5 +80,159 @@ class MemberRepositoryTest {
         assertThat(deletedCount).isEqualTo(0);
 
         //then
+    }
+
+    @Test
+    public void findByUsernameAndAgeGreaterThen() throws Exception {
+        Member member1 = new Member("A", 10);
+        Member member2 = new Member("A", 20);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        List<Member> result = memberRepository.findByUsernameAndAgeGreaterThan("A", 15);
+
+        assertThat(result.get(0).getUsername()).isEqualTo("A");
+        assertThat(result.get(0).getAge()).isEqualTo(20);
+        assertThat(result.size()).isEqualTo(1);
+
+    }
+
+    @Test
+    public void testQuery() throws Exception {
+        Member member1 = new Member("A", 10);
+        Member member2 = new Member("A", 20);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        List<Member> result = memberRepository.findUser("A", 10);
+        assertThat(result.get(0)).isEqualTo(member1);
+    }
+
+    @Test
+    public void findUsernameList() throws Exception {
+        Member member1 = new Member("A", 10);
+        Member member2 = new Member("B", 20);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        List<String> usernameList = memberRepository.findUsernameList();
+        for (String s : usernameList) {
+            System.out.println("s = " + s);
+        }
+
+    }
+
+    @Test
+    public void findMemberDto() throws Exception {
+        Team team = new Team("teamA");
+        teamRepository.save(team);
+
+        Member member1 = new Member("A", 10);
+        member1.setTeam(team);
+        memberRepository.save(member1);
+
+        List<MemberDto> memberDto = memberRepository.findMemberDto();
+        for (MemberDto dto : memberDto) {
+            System.out.println("dto = " + dto);
+        }
+    }
+
+    @Test
+    public void findByNames() throws Exception {
+        Member member1 = new Member("A", 10);
+        Member member2 = new Member("B", 20);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        List<Member> result = memberRepository.findByNames(Arrays.asList("A", "B"));
+        for (Member member : result) {
+            System.out.println("member = " + member);
+        }
+    }
+
+    @Test
+    public void returnType() throws Exception {
+        Member member1 = new Member("A", 10);
+        Member member2 = new Member("A", 20);
+
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        List<Member> a = memberRepository.findListByUsername("ASD");
+        System.out.println("a = " + a);
+
+        Member a1 = memberRepository.findMemberByUsername("A");
+        System.out.println("a1 = " + a1);
+
+        Optional<Member> a2 = memberRepository.findOptionalByUsername("ASD");
+        System.out.println("a2 = " + a2);
+
+        List<Member> result = memberRepository.findListByUsername("asdfg");
+        System.out.println("result = " + result);
+
+        Member findMember = memberRepository.findMemberByUsername("asdds");
+        System.out.println("findMember = " + findMember);
+
+    }
+
+    @Test
+    public void paging() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Page<Member> page = memberRepository.findByAge(age, pageRequest);
+
+        Page<MemberDto> toMap = page.map(m -> new MemberDto(m.getId(), m.getUsername(), null));
+
+        //then
+        List<Member> content = page.getContent();
+        long totalElements = page.getTotalElements();
+
+        assertThat(content.size()).isEqualTo(3);
+        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+
+    }
+
+    @Test
+    public void slicing() throws Exception {
+        //given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 10));
+        memberRepository.save(new Member("member3", 10));
+        memberRepository.save(new Member("member4", 10));
+        memberRepository.save(new Member("member5", 10));
+
+        int age = 10;
+        PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
+
+        //when
+        Slice<Member> page = memberRepository.findByAge(age, pageRequest);
+
+        //then
+        List<Member> content = page.getContent();
+
+        assertThat(content.size()).isEqualTo(3);
+//        assertThat(page.getTotalElements()).isEqualTo(5);
+        assertThat(page.getNumber()).isEqualTo(0);
+//        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.isFirst()).isTrue();
+        assertThat(page.hasNext()).isTrue();
+
     }
 }
