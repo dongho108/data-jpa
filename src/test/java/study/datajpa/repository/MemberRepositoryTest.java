@@ -385,8 +385,32 @@ class MemberRepositoryTest {
 
     }
 
+//    @Test
+//    public void projections() throws Exception {
+//        //given
+//        Team teamA = new Team("teamA");
+//        em.persist(teamA);
+//
+//        Member m1 = new Member("m1", 0, teamA);
+//        Member m2 = new Member("m2", 0, teamA);
+//        em.persist(m1);
+//        em.persist(m2);
+//
+//        em.flush();
+//        em.clear();
+//
+//
+//        //when
+//        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+//
+//        for (UsernameOnly usernameOnly : result) {
+//            System.out.println("usernameOnly = " + usernameOnly.getUsername());
+//        }
+//        //then
+//    }
+
     @Test
-    public void projections() throws Exception {
+    public void projectionsClass() throws Exception {
         //given
         Team teamA = new Team("teamA");
         em.persist(teamA);
@@ -401,10 +425,21 @@ class MemberRepositoryTest {
 
 
         //when
-        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+//        List<UsernameOnlyDto> result = memberRepository.findProjectionsByUsername("m1");
+//        List<UsernameOnlyDto> result = memberRepository.findProjectionsByUsername("m1", UsernameOnlyDto.class);
+        List<NestedClosedProjections> result = memberRepository.findProjectionsByUsername("m1", NestedClosedProjections.class);
 
-        for (UsernameOnly usernameOnly : result) {
-            System.out.println("usernameOnly = " + usernameOnly);
+//        for (UsernameOnlyDto usernameOnlyDto : result) {
+//            System.out.println("usernameOnlyDto = " + usernameOnlyDto);
+//            System.out.println("usernameOnlyDto.getUsername() = " + usernameOnlyDto.getUsername());
+//        }
+
+        for (NestedClosedProjections nestedClosedProjections : result) {
+            String username = nestedClosedProjections.getUsername();
+            System.out.println("username = " + username);
+            String teamName = nestedClosedProjections.getTeam().getName();
+            System.out.println("teamName = " + teamName);
+
         }
         //then
     }
